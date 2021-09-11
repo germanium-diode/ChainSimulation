@@ -9,7 +9,7 @@ set yr [-0.5:3.0]
 
 unset key; unset tics
 
-do for [i=1:179] {
+do for [i=1:1199] {
 	set output sprintf('res/image%05d.png', i)
 
 	pl 'walls.dat' w lines lw 2 lc rgb '#000000', \

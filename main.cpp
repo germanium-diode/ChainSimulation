@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
 	thisSimulation.writeWallsToFile("walls.dat");
 
 	// make chain
-	thisSimulation.initChain(16*200, 0.04, 1.0e6, 0.5, 1.0e6);
+	thisSimulation.initChain(16*200, 0.04, 1.0e7, 0.5, 1.0e6);
 
 	// arrange chain elements in a loop above the container
 	thisSimulation.chain.quickArrangementEntwined(Vector(containerposx + 0.5 * containerwidth, containerposy + 0.5 * containerheight), 0.33 * containerwidth, 16*8, 0.1);
@@ -52,11 +52,11 @@ int main(int argc, char *argv[]){
 	if (false) {
 		thisSimulation.loadChainBackup("chainbackup.dat");
 	} else {
-		for (int i = 0; i < 150; i++) {
-			thisSimulation.writeChainToFile(0);
-			thisSimulation.step(floor(1.0/60.0/thisSimulation.dt));
-			std::cout << i << " " << thisSimulation.time << std::endl;
-		}
+		//for (int i = 0; i < 150; i++) {
+		//	thisSimulation.writeChainToFile(0);
+		//	thisSimulation.step(floor(1.0/60.0/thisSimulation.dt));
+		//	std::cout << i << " " << thisSimulation.time << std::endl;
+		//}
 		thisSimulation.saveChainBackup("chainbackup.dat");
 	}
 	// pull first element out of container
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]){
 			thisSimulation.chain.elements[0]->externalax = 0.0;
 			thisSimulation.chain.elements[0]->externalay = 0.0;
 		}
-		thisSimulation.writeChainToFile(0);
+		//thisSimulation.writeChainToFile(0);
 		thisSimulation.writeChainToFile(i+1);
 		thisSimulation.step(floor(1.0/60.0/thisSimulation.dt));
 	}

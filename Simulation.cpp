@@ -65,73 +65,44 @@ void Simulation::clearWalls() {
 std::vector<Vector> Simulation::getInternalForces(Chain somechain) { // returns std:vector of accelerations; input is chain
 	std::vector<Vector> result;
 	// stability
+
 	for(int i = 0; i < somechain.elements.size(); i++) {
 		Vector currentforce(0.0, 0.0);
-		// left link
-		if (somechain.elements[i]->linkL->elA) {
-			Vector direction = relativeVector(Vector(somechain.elements[i]->x, somechain.elements[i]->y), Vector(somechain.elements[i]->linkL->elA->x, somechain.elements[i]->linkL->elA->y));
-			double distance = lengthOfVector(direction);
-			if (distance != 0.0) {
-				direction.x /= distance;
-				direction.y /= distance;
-
-				Vector relativevelocity = relativeVector(Vector(somechain.elements[i]->vx, somechain.elements[i]->vy), Vector(somechain.elements[i]->linkL->elA->vx, somechain.elements[i]->linkL->elA->vy));
-				double parallelcomponent = scalarproduct(relativevelocity, direction);
-				relativevelocity.x = parallelcomponent * direction.x;
-				relativevelocity.y = parallelcomponent * direction.y;
-
-				double fx = somechain.stability * (distance - somechain.elements[i]->linkL->linkLength0) * direction.x + somechain.stabilitydamping * relativevelocity.x;
-				double fy = somechain.stability * (distance - somechain.elements[i]->linkL->linkLength0) * direction.y + somechain.stabilitydamping * relativevelocity.y;
-
-				currentforce.x += fx;
-				currentforce.y += fy;
-			}
-		}
-		// right link
-		if (somechain.elements[i]->linkR->elB) {
-			Vector direction = relativeVector(Vector(somechain.elements[i]->x, somechain.elements[i]->y), Vector(somechain.elements[i]->linkR->elB->x, somechain.elements[i]->linkR->elB->y));
-			double distance = lengthOfVector(direction);
-			if (distance != 0.0) {
-				direction.x /= distance;
-				direction.y /= distance;
-
-				Vector relativevelocity = relativeVector(Vector(somechain.elements[i]->vx, somechain.elements[i]->vy), Vector(somechain.elements[i]->linkR->elB->vx, somechain.elements[i]->linkR->elB->vy));
-				double parallelcomponent = scalarproduct(relativevelocity, direction);
-				relativevelocity.x = parallelcomponent * direction.x;
-				relativevelocity.y = parallelcomponent * direction.y;
-
-				double fx = somechain.stability * (distance - somechain.elements[i]->linkR->linkLength0) * direction.x + somechain.stabilitydamping * relativevelocity.x;
-				double fy = somechain.stability * (distance - somechain.elements[i]->linkR->linkLength0) * direction.y + somechain.stabilitydamping * relativevelocity.y;
-
-				currentforce.x += fx;
-				currentforce.y += fy;
-			}
-		}
 		result.push_back(currentforce);
 	}
 
-	for(int i = 1; i < somechain.elements.size() - 1; i++) {
+
+	for(int i = 1; i < somechain.elements.size(); i++) {
 		// stiffness
 		if (somechain.elements[i]->linkL->elA && somechain.elements[i]->linkR->elB) {
-			Vector directionA = relativeVector(Vector(somechain.elements[i]->x, somechain.elements[i]->y), Vector(somechain.elements[i]->linkL->elA->x, somechain.elements[i]->linkL->elA->y));
-			Vector directionB = relativeVector(Vector(somechain.elements[i]->x, somechain.elements[i]->y), Vector(somechain.elements[i]->linkR->elB->x, somechain.elements[i]->linkR->elB->y));
-			Vector direction = Vector(directionA.x + directionB.x, directionA.y + directionB.y);
+			Vector direction = relativeVector(Vector(somechain.elements[i]->x, somechain.elements[i]->y), Vector(somechain.elements[i]->linkL->elA->x, somechain.elements[i]->linkL->elA->y));
 			double elongationlength = lengthOfVector(direction);
-			double avgLinkLength = 0.5 * (somechain.elements[i]->linkL->linkLength0 + somechain.elements[i]->linkR->linkLength0);
-			if (elongationlength > 1e-6 * avgLinkLength) {
-				direction.x /= elongationlength;
+			double fx,fy;
+
+			if (elongationlength > somechain.stiffnessoffsetlength) {
+				direction.x /= elongationlength; //unit vector
 				direction.y /= elongationlength;
 
-				double fx = std::max(0.0, 0.5 * elongationlength - somechain.stiffnessoffsetlength * avgLinkLength ) * somechain.stiffness * direction.x;
-				double fy = std::max(0.0, 0.5 * elongationlength - somechain.stiffnessoffsetlength * avgLinkLength ) * somechain.stiffness * direction.y;
+				fx = (elongationlength - somechain.stiffnessoffsetlength ) * somechain.stiffness * direction.x;
+				fy = (elongationlength - somechain.stiffnessoffsetlength ) * somechain.stiffness * direction.y;
+			}
+			else if(elongationlength < 0.25 * somechain.stiffnessoffsetlength){
+				direction.x /= elongationlength; //unit vector
+				direction.y /= elongationlength;
 
+				Vector relativevelocity = relativeVector(Vector(somechain.elements[i]->vx, somechain.elements[i]->vy), Vector(somechain.elements[i-1]->vx, somechain.elements[i-1]->vy));
+				double parallelcomponent = scalarproduct(relativevelocity, direction);
+				relativevelocity.x = parallelcomponent * direction.x;
+				relativevelocity.y = parallelcomponent * direction.y;
+
+				fx = somechain.stability * (elongationlength - somechain.elements[i]->linkR->linkLength0) * direction.x + somechain.stabilitydamping * relativevelocity.x;
+				fy = somechain.stability * (elongationlength - somechain.elements[i]->linkR->linkLength0) * direction.y + somechain.stabilitydamping * relativevelocity.y;
+
+			}
 				result[i].x += fx;
 				result[i].y += fy;
-				result[i-1].x -= 0.5 * fx;
-				result[i-1].y -= 0.5 * fy;
-				result[i+1].x -= 0.5 * fx;
-				result[i+1].y -= 0.5 * fy;
-			}
+				result[i-1].x -= fx;
+				result[i-1].y -= fy;
 		}
 	}
 	return result;
@@ -314,8 +285,14 @@ void Simulation::writeChainToFile(int number) {
 	std::ostringstream filename;
 
 	std::stringstream ss;
-	ss << "data/output" << std::setfill('0') << std::setw(5) << number << ".dat";
+	ss << "output" << std::setfill('0') << std::setw(5) << number << ".dat";
 	outputfile.open(ss.str());
+	if (outputfile.is_open() ){
+
+	}
+	else{
+		std::cout << "Could not open file:" << ss.str() << '\n';
+	}
 	for (const auto& value: chain.elements) {
 		outputfile << value->x << "\t" << value->y << std::endl;
 	}

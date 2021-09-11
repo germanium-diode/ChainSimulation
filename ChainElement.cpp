@@ -10,7 +10,7 @@ ChainElement::ChainElement() {
 	externalax = 0.0;
 	externalay = 0.0;
 	radius = 1.0;
-	mass = 3.1415926;
+	mass = 10;
 	linkL = NULL;
 	linkR = NULL;
 	active = false;
